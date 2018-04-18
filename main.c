@@ -79,17 +79,17 @@
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
 #warning ("CHECK LFCLK & LED DEFS IN custom_board.h")
-#if defined(ADS1292)
-#include "ads1291-2.h"
 #include "ble_dis.h"
-#include "ble_eeg.h"
-#include "nrf_delay.h"
 #include "nrf_drv_gpiote.h"
 #include "uicr_config.h"
+#include "nrf_delay.h"
 #define DEVICE_MODEL_NUMBERSTR "Version 3.1"
 #define DEVICE_FIRMWARE_STRING "Version 13.1.0"
-ble_eeg_t m_eeg;
 static bool m_connected = false;
+#if defined(ADS1292)
+#include "ads1291-2.h"
+#include "ble_eeg.h"
+ble_eeg_t m_eeg;
 #define SPI_SCLK_WRITE_REG 0
 #define SPI_SCLK_SAMPLING 2
 #endif
@@ -100,7 +100,7 @@ ble_mpu_t m_mpu;
 #include "app_mpu.h"
 #include "nrf_drv_twi.h"
 APP_TIMER_DEF(m_mpu_send_timer_id);
-#define TICKS_MPU_SAMPLING_INTERVAL APP_TIMER_TICKS(32)
+#define TICKS_MPU_SAMPLING_INTERVAL APP_TIMER_TICKS(10)
 #endif
 
 #if defined(SAADC_ENABLED) && SAADC_ENABLED == 1
@@ -126,12 +126,7 @@ static uint16_t m_samples;
 
 #define APP_FEATURE_NOT_SUPPORTED BLE_GATT_STATUS_ATTERR_APP_BEGIN + 2 /**< Reply when unsupported features are requested. */
 
-#define DEVICE_NAME "250Hz nRF52-ECG2"           //"nRF52_EEG"         /**< Name of device. Will be included in the advertising data. */
-#define DEVICE_NAME_500 "500Hz nRF52-ECG2" //"nRF52_EEG"         /**< Name of device. Will be included in the advertising data. */
-#define DEVICE_NAME_1k "1k nRF52-ECG2"   //"nRF52_EEG"         /**< Name of device. Will be included in the advertising data. */
-#define DEVICE_NAME_2k "2k nRF52-ECG2"   //"nRF52_EEG"         /**< Name of device. Will be included in the advertising data. */
-#define DEVICE_NAME_4k "4k nRF52-ECG2"   //"nRF52_EEG"         /**< Name of device. Will be included in the advertising data. */
-#define DEVICE_NAME_8k "8k nRF52-ECG2"   //"nRF52_EEG"         /**< Name of device. Will be included in the advertising data. */
+#define DEVICE_NAME "nRF52-MotionSensors"           //"nRF52_EEG"         /**< Name of device. Will be included in the advertising data. */
 
 #define MANUFACTURER_NAME "Potato Labs" /**< Manufacturer. Will be passed to Device Information Service. */
 #define APP_ADV_INTERVAL 300            /**< The advertising interval (in units of 0.625 ms. This value corresponds to 187.5 ms). */
@@ -166,7 +161,6 @@ static nrf_ble_gatt_t m_gatt;                            /**< GATT module instan
 
 static ble_uuid_t m_adv_uuids[] =
     {
-        {BLE_UUID_BIOPOTENTIAL_EEG_MEASUREMENT_SERVICE, BLE_UUID_TYPE_BLE},
 #if (defined(MPU60x0) || defined(MPU9150) || defined(MPU9250) || defined(MPU9255))
         {BLE_UUID_MPU_SERVICE_UUID, BLE_UUID_TYPE_BLE},
 #endif
@@ -272,26 +266,8 @@ static void gap_params_init(void) {
   ble_gap_conn_sec_mode_t sec_mode;
 
   BLE_GAP_CONN_SEC_MODE_SET_OPEN(&sec_mode);
-  if (ADS1291_2_REGDEFAULT_CONFIG1 == 0x01) {
-    err_code = sd_ble_gap_device_name_set(&sec_mode, (const uint8_t *)DEVICE_NAME,
-        strlen(DEVICE_NAME));
-  } else if (ADS1291_2_REGDEFAULT_CONFIG1 == 0x02) {
-    err_code = sd_ble_gap_device_name_set(&sec_mode, (const uint8_t *)DEVICE_NAME_500,
-        strlen(DEVICE_NAME_500));
-  } else if (ADS1291_2_REGDEFAULT_CONFIG1 == 0x03) {
-    err_code = sd_ble_gap_device_name_set(&sec_mode, (const uint8_t *)DEVICE_NAME_1k,
-        strlen(DEVICE_NAME_1k));
-  } else if (ADS1291_2_REGDEFAULT_CONFIG1 == 0x04) {
-    err_code = sd_ble_gap_device_name_set(&sec_mode, (const uint8_t *)DEVICE_NAME_2k,
-        strlen(DEVICE_NAME_2k));
-  } else if (ADS1291_2_REGDEFAULT_CONFIG1 == 0x05) {
-    err_code = sd_ble_gap_device_name_set(&sec_mode, (const uint8_t *)DEVICE_NAME_4k,
-        strlen(DEVICE_NAME_4k));
-  } else if (ADS1291_2_REGDEFAULT_CONFIG1 == 0x06) {
-    err_code = sd_ble_gap_device_name_set(&sec_mode, (const uint8_t *)DEVICE_NAME_8k,
-        strlen(DEVICE_NAME_8k));
-  }
-
+  err_code = sd_ble_gap_device_name_set(&sec_mode, (const uint8_t *)DEVICE_NAME,
+      strlen(DEVICE_NAME));
   APP_ERROR_CHECK(err_code);
 
   /* YOUR_JOB: Use an appearance value matching the application's use case.
@@ -320,7 +296,6 @@ static void gatt_init(void) {
  */
 static void services_init(void) {
   uint32_t err_code;
-  ble_eeg_service_init(&m_eeg);
 /**@Device Information Service:*/
 #if (defined(MPU60x0) || defined(MPU9150) || defined(MPU9250) || defined(MPU9255))
   ble_mpu_service_init(&m_mpu);
@@ -480,7 +455,6 @@ static void on_ble_evt(ble_evt_t *p_ble_evt) {
   case BLE_GAP_EVT_DISCONNECTED:
     NRF_LOG_INFO("Disconnected.\r\n");
     m_connected = false;
-    ads1291_2_standby();
 #if LEDS_ENABLE == 1
     nrf_gpio_pin_clear(LED_2); // Blue
     nrf_gpio_pin_set(LED_1);   // Green
@@ -489,9 +463,6 @@ static void on_ble_evt(ble_evt_t *p_ble_evt) {
     break; // BLE_GAP_EVT_DISCONNECTED
   case BLE_GAP_EVT_CONNECTED:
     battery_level_update();
-    ads_spi_uninit();
-    ads_spi_init_with_sample_freq(SPI_SCLK_SAMPLING);
-    ads1291_2_wake();
 #if LEDS_ENABLE == 1
     nrf_gpio_pin_set(LED_2);
     nrf_gpio_pin_clear(LED_1);
@@ -571,7 +542,6 @@ static void ble_evt_dispatch(ble_evt_t *p_ble_evt) {
 #if defined(BLE_BAS_ENABLED) && BLE_BAS_ENABLED == 1
   ble_bas_on_ble_evt(&m_bas, p_ble_evt);
 #endif
-  ble_eeg_on_ble_evt(&m_eeg, p_ble_evt);
 #if (defined(MPU60x0) || defined(MPU9150) || defined(MPU9250) || defined(MPU9255))
   ble_mpu_on_ble_evt(&m_mpu, p_ble_evt);
 #endif
@@ -810,64 +780,6 @@ void saadc_init(void) {
 }
 #endif
 
-void in_pin_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action) {
-  UNUSED_PARAMETER(pin);
-  UNUSED_PARAMETER(action);
-  if (m_connected) {
-#if ADS1291_2_REGDEFAULT_CONFIG1 == 0x06
-  get_eeg_voltage_array_2ch(&m_eeg);
-//get_eeg_voltage_array_2ch_low_resolution(&m_eeg);
-//  m_eeg.eeg_ch1_count+=2;
-#else
-  get_eeg_voltage_array_2ch(&m_eeg);
-#endif
-  }
-#if defined(APP_TIMER_SAMPLING) && APP_TIMER_SAMPLING == 1
-  m_samples += 1;
-#endif
-  if (m_eeg.eeg_ch1_count == EEG_PACKET_LENGTH) {
-    m_eeg.eeg_ch1_count = 0;
-    if (ADS1291_2_REGDEFAULT_CH2SET != 0x81)
-      ble_eeg_update_2ch(&m_eeg);
-    else
-      ble_eeg_update_1ch_v2(&m_eeg);
-  }
-}
-
-static void ads1299_gpio_init(void) {
-#if defined(BOARD_NRF_BREAKOUT) | defined(BOARD_PCA10028) | defined(BOARD_PCA10040) | defined(BOARD_2CH_ECG_RAT)
-  nrf_gpio_pin_dir_set(ADS1291_2_DRDY_PIN, NRF_GPIO_PIN_DIR_INPUT); //sets 'direction' = input/output
-  nrf_gpio_pin_dir_set(ADS1291_2_PWDN_PIN, NRF_GPIO_PIN_DIR_OUTPUT);
-#endif
-#if defined(BOARD_2CH_ECG_RAT) && LEDS_ENABLE == 1
-  nrf_gpio_cfg_output(LED_1);
-  nrf_gpio_cfg_output(LED_2);
-  nrf_gpio_pin_set(LED_1);
-  nrf_gpio_pin_set(LED_2);
-#endif
-#ifdef BATTERY_LOAD_SWITCH_CTRL_PIN
-  nrf_gpio_cfg_output(BATTERY_LOAD_SWITCH_CTRL_PIN);
-  nrf_gpio_pin_set(BATTERY_LOAD_SWITCH_CTRL_PIN); //OFF
-#endif
-  uint32_t err_code;
-  if (!nrf_drv_gpiote_is_init()) {
-    err_code = nrf_drv_gpiote_init();
-  }
-  NRF_LOG_RAW_INFO(" nrf_drv_gpiote_init: %d\r\n", err_code);
-  NRF_LOG_FLUSH();
-  APP_ERROR_CHECK(err_code);
-  bool is_high_accuracy = true;
-  nrf_drv_gpiote_in_config_t in_config = GPIOTE_CONFIG_IN_SENSE_HITOLO(is_high_accuracy);
-  in_config.is_watcher = true;
-  in_config.pull = NRF_GPIO_PIN_NOPULL;
-  err_code = nrf_drv_gpiote_in_init(ADS1291_2_DRDY_PIN, &in_config, in_pin_handler);
-  NRF_LOG_RAW_INFO(" nrf_drv_gpiote_in_init: %d: \r\n", err_code);
-  NRF_LOG_FLUSH();
-  APP_ERROR_CHECK(err_code);
-  nrf_drv_gpiote_in_event_enable(ADS1291_2_DRDY_PIN, true);
-  ads1291_2_powerdn();
-}
-
 static void wait_for_event(void) {
   (void)sd_app_evt_wait();
 }
@@ -880,32 +792,11 @@ int main(void) {
   log_init();
   timers_init();
   ble_stack_init();
-  ads1299_gpio_init();
   gap_params_init();
   gatt_init();
   advertising_init();
   services_init();
   conn_params_init();
-#if defined(ADS1292)
-  //SPI STUFF FOR ADS:
-  // Stop continuous data conversion and initialize registers to default values
-  //  ads1291_2_powerdn();
-  ads1291_2_powerup();
-  ads_spi_init_with_sample_freq(SPI_SCLK_WRITE_REG);
-  nrf_delay_ms(5);
-  ads1291_2_stop_rdatac();
-
-  ads1291_2_init_regs();
-
-  ads1291_2_soft_start_conversion();
-  ads1291_2_check_id();
-  ads1291_2_start_rdatac();
-
-  // Put AFE to sleep while we're not connected
-  ads1291_2_standby();
-  nrf_delay_ms(10);
-  m_eeg.eeg_ch1_count = 0;
-#endif
 
 #if (defined(MPU60x0) || defined(MPU9150) || defined(MPU9250) || defined(MPU9255))
   mpu_setup();
