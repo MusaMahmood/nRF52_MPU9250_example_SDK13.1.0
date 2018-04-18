@@ -100,7 +100,7 @@ ble_mpu_t m_mpu;
 #include "app_mpu.h"
 #include "nrf_drv_twi.h"
 APP_TIMER_DEF(m_mpu_send_timer_id);
-#define TICKS_MPU_SAMPLING_INTERVAL APP_TIMER_TICKS(10)
+#define TICKS_MPU_SAMPLING_INTERVAL APP_TIMER_TICKS(20)
 #endif
 
 #if defined(SAADC_ENABLED) && SAADC_ENABLED == 1

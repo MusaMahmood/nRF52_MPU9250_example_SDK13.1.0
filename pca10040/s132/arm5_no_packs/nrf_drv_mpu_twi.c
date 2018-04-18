@@ -29,7 +29,7 @@
 #define MPU_ADDRESS 0x68
 #define MPU_AK89XX_MAGN_ADDRESS 0x0C
 
-static const nrf_drv_twi_t m_twi_instance = NRF_DRV_TWI_INSTANCE(1);
+static const nrf_drv_twi_t m_twi_instance = NRF_DRV_TWI_INSTANCE(0);
 volatile static bool twi_tx_done = false;
 volatile static bool twi_rx_done = false;
 
