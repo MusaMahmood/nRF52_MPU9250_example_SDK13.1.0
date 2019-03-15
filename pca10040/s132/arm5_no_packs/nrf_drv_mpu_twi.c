@@ -20,8 +20,8 @@
 #define MPU_TWI_SCL_PIN 31
 #define MPU_TWI_SDA_PIN 30
 #else
-#define MPU_TWI_SCL_PIN 10
-#define MPU_TWI_SDA_PIN 11
+#define MPU_TWI_SCL_PIN 21
+#define MPU_TWI_SDA_PIN 20
 #endif
 
 #define MPU_TWI_BUFFER_SIZE 14 // 14 byte buffers will suffice to read acceleromter, gyroscope and temperature data in one transmission.

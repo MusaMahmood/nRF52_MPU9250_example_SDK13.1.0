@@ -52,9 +52,9 @@ static uint32_t ble_char_combined_add(ble_mpu_t *p_mpu) {
   memset(&attr_char_value, 0, sizeof(attr_char_value));
   attr_char_value.p_uuid = &char_uuid;
   attr_char_value.p_attr_md = &attr_md;
-  attr_char_value.max_len = 240;
+  attr_char_value.max_len = MPU_PACKET_SIZE;
   attr_char_value.init_len = 0;
-  uint8_t value[240];
+  uint8_t value[MPU_PACKET_SIZE];
   attr_char_value.p_value = value;
   err_code = sd_ble_gatts_characteristic_add(p_mpu->service_handle,
       &char_md,
@@ -92,7 +92,7 @@ void ble_mpu_service_init(ble_mpu_t *p_mpu) {
 void ble_mpu_combined_update_v2(ble_mpu_t *p_mpu) {
   uint32_t err_code;
   if (p_mpu->conn_handle != BLE_CONN_HANDLE_INVALID) {
-    uint16_t hvx_len = 240;
+    uint16_t hvx_len = MPU_PACKET_SIZE;
     ble_gatts_hvx_params_t const hvx_params = {
       .handle = p_mpu->combined_char_handles.value_handle,
       .type = BLE_GATT_HVX_NOTIFICATION,

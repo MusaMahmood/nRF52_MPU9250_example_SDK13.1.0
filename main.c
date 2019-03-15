@@ -100,7 +100,7 @@ ble_mpu_t m_mpu;
 #include "app_mpu.h"
 #include "nrf_drv_twi.h"
 APP_TIMER_DEF(m_mpu_send_timer_id);
-#define TICKS_MPU_SAMPLING_INTERVAL APP_TIMER_TICKS(20)
+#define TICKS_MPU_SAMPLING_INTERVAL APP_TIMER_TICKS(32)
 #endif
 
 #if defined(SAADC_ENABLED) && SAADC_ENABLED == 1
@@ -126,7 +126,7 @@ static uint16_t m_samples;
 
 #define APP_FEATURE_NOT_SUPPORTED BLE_GATT_STATUS_ATTERR_APP_BEGIN + 2 /**< Reply when unsupported features are requested. */
 
-#define DEVICE_NAME "nRF52-MotionSensors"           //"nRF52_EEG"         /**< Name of device. Will be included in the advertising data. */
+#define DEVICE_NAME "nRF52-MS-Magn"           //"nRF52_EEG"         /**< Name of device. Will be included in the advertising data. */
 
 #define MANUFACTURER_NAME "Potato Labs" /**< Manufacturer. Will be passed to Device Information Service. */
 #define APP_ADV_INTERVAL 300            /**< The advertising interval (in units of 0.625 ms. This value corresponds to 187.5 ms). */
@@ -202,7 +202,8 @@ static void mpu_send_timeout_handler(void *p_context) {
   //DEPENDS ON SAMPLING RATE
   mpu_read_accel_array(&m_mpu);
   mpu_read_gyro_array(&m_mpu);
-  if (m_mpu.mpu_count == 240) {
+//  mpu_read_magn_array(&m_mpu);
+  if (m_mpu.mpu_count == MPU_PACKET_SIZE) {
     m_mpu.mpu_count = 0;
     ble_mpu_combined_update_v2(&m_mpu);
   }
@@ -717,6 +718,10 @@ void mpu_setup(void) {
   p_mpu_config.accel_config.afs_sel = AFS_16G;      // Set accelerometer full scale range to 2G
   ret_code = mpu_config(&p_mpu_config);             // Configure the MPU with above values
   APP_ERROR_CHECK(ret_code);                        // Check for errors in return value
+//  mpu_magn_config_t p_magn_config;
+//  p_magn_config.mode = 4;
+//  p_magn_config.resolution = 1; // 16-bit resolution.
+//  ret_code = mpu_magnetometer_init(&p_magn_config);
 }
 //*/
 #endif
@@ -792,6 +797,12 @@ int main(void) {
   log_init();
   timers_init();
   ble_stack_init();
+#if LEDS_ENABLE == 1
+  nrf_gpio_cfg_output(LED_1);
+  nrf_gpio_cfg_output(LED_2);
+  nrf_gpio_pin_set(LED_1);
+  nrf_gpio_pin_set(LED_2);
+#endif
   gap_params_init();
   gatt_init();
   advertising_init();
@@ -800,6 +811,7 @@ int main(void) {
 
 #if (defined(MPU60x0) || defined(MPU9150) || defined(MPU9250) || defined(MPU9255))
   mpu_setup();
+  m_mpu.mpu_count = 0;
 #endif
 
 #if defined(SAADC_ENABLED) && SAADC_ENABLED == 1

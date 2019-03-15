@@ -355,7 +355,7 @@ uint32_t mpu_config_ff_detection(uint16_t mg, uint8_t duration);
  */
 
 
-#if (defined(MPU9150) || defined(MPU9255)) && 0// && (TWI_COUNT >= 1) // Magnetometer only works with TWI so check if TWI is enabled
+#if (defined(MPU9150) || defined(MPU9255))// && (TWI_COUNT >= 1) // Magnetometer only works with TWI so check if TWI is enabled
 
 /**@brief Enum defining possible magnetometer operating modes */
 enum magn_op_mode {
@@ -405,6 +405,7 @@ typedef struct
 	uint8_t res_mirror 	: 1; // Output bit setting (mirror) 
 }mpu_magn_read_status_t;
 
+uint32_t mpu_read_magn_array(ble_mpu_t *p_mpu);
 
 /**@brief Function for enabling and starting the magnetometer
  *

@@ -13,6 +13,10 @@
 #ifndef MPU9255_REG_MAP_H
 #define MPU9255_REG_MAP_H
 
+//Extras
+#define MPU_AK89XX_REG_HXL 0x03
+#define MPU_AK89XX_REG_ST2 0x09
+#define MPU_AK89XX_REG_CNTL 0x0A
 
 #define MPU_REG_ELF_TEST_X_GYRO    0x00 // Dec 0,   R/W,  xg_st_data [7:0]
 #define MPU_REG_ELF_TEST_Y_GYRO    0x01 // Dec 1,   R/W,  yg_st_data [7:0]

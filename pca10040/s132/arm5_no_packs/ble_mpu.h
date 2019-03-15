@@ -12,6 +12,8 @@
 //#include "app_mpu.h"
 #include <stdint.h>
 
+#define MPU_PACKET_SIZE 216
+
 // Base UUID
 #define BLE_MPU_BASE_UUID {0x57, 0x80, 0xD2, 0x94, 0xA3, 0xB2, 0xFE, 0x39, 0x5F, 0x87, 0xFD, 0x35, 0x00, 0x00, 0x8B, 0x22}
 
@@ -31,7 +33,7 @@ typedef struct
   uint16_t conn_handle;                        /**< Handle of the current connection (as provided by the BLE stack, is BLE_CONN_HANDLE_INVALID if not in a connection).*/
   uint16_t service_handle;                     /**< Handle of ble Service (as provided by the BLE stack). */
   ble_gatts_char_handles_t combined_char_handles;
-  uint8_t mpu_buffer[240]; //20 sensor readings!
+  uint8_t mpu_buffer[MPU_PACKET_SIZE]; //20 sensor readings!
   uint8_t mpu_count;
 } ble_mpu_t;
 

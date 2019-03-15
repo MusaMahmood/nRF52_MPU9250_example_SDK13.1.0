@@ -49,6 +49,7 @@ uint32_t mpu_init(void) {
   if (err_code != NRF_SUCCESS)
     return err_code;
 
+  // Initialize Magnetometer
   return NRF_SUCCESS;
 }
 
@@ -146,7 +147,18 @@ uint32_t mpu_config_ff_detection(uint16_t mg, uint8_t duration) {
  * are similar, but AK8963 has adjustable resoultion (14 and 16 bits) while AK8975C has 13 bit resolution fixed. 
  */
 
-#if defined(MPU9150) || defined(MPU9255) && 0// && (TWI_COUNT >= 1) // Magnetometer only works with TWI so check if TWI is enabled
+#if defined(MPU9150) || defined(MPU9255)// && (TWI_COUNT >= 1) // Magnetometer only works with TWI so check if TWI is enabled
+
+uint32_t mpu_read_magn_array(ble_mpu_t *p_mpu) {
+  uint32_t err_code;
+  uint8_t raw_values[6];
+  err_code = nrf_drv_mpu_read_registers(MPU_AK89XX_REG_HXL, raw_values, 6);
+  if (err_code != NRF_SUCCESS)
+    return err_code;
+  memcpy(&p_mpu->mpu_buffer[p_mpu->mpu_count], raw_values, 6);
+  p_mpu->mpu_count+=6;
+  return NRF_SUCCESS;
+}
 
 uint32_t mpu_magnetometer_init(mpu_magn_config_t *p_magnetometer_conf) {
   uint32_t err_code;
